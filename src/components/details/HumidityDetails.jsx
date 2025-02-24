@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Table, DatePicker } from 'antd';
 import moment from 'moment';
+import '../../styles/components/details/HumidityDetails.css';
 
 const { RangePicker } = DatePicker;
 
-const TemperatureDetails = () => {
+const HumidityDetails = () => {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
 
@@ -14,7 +15,7 @@ const TemperatureDetails = () => {
       const generatedData = Array.from({ length: 30 }, (_, index) => ({
         key: index,
         date: moment().subtract(index, 'days').format('YYYY-MM-DD'),
-        value: Math.random() * 10 + 20 // 20-30°C
+        value: Math.random() * 20 + 40 // 40-60% độ ẩm
       }));
       setData(generatedData);
       setFilteredData(generatedData);
@@ -43,18 +44,18 @@ const TemperatureDetails = () => {
       key: 'date',
     },
     {
-      title: 'Temperature (°C)',
+      title: 'Humidity (%)',
       dataIndex: 'value',
       key: 'value',
     }
   ];
 
   return (
-    <div className="temperature-details">
+    <div className="humidity-details">
       <RangePicker onChange={handleDateChange} style={{ marginBottom: 20 }} />
-      <Table columns={columns} dataSource={filteredData} />
+      <Table columns={columns} dataSource={filteredData} pagination={{ pageSize: 8 }} />
     </div>
   );
 };
 
-export default TemperatureDetails;
+export default HumidityDetails;

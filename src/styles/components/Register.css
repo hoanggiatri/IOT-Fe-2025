@@ -1,4 +1,4 @@
-.login-container {
+.register-container {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -6,19 +6,19 @@
   background-color: #f0f2f5;
 }
 
-.login-card {
+.register-card {
   width: 300px;
   padding: 20px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border-radius: 10px;
 }
 
-.login-title {
+.register-title {
   text-align: center;
   margin-bottom: 20px;
 }
 
-.login-form-button {
+.register-form-button {
   width: 100%;
 }
 

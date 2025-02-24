@@ -1,15 +1,6 @@
 import React from 'react';
-import { Layout, Menu } from 'antd';
-import {
-  FaTachometerAlt,
-  FaUser,
-  FaTemperatureHigh,
-  FaTint,
-  FaLightbulb,
-  FaWind,
-  FaSignInAlt
-} from 'react-icons/fa';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { Layout } from 'antd';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import 'antd/dist/reset.css';
 
@@ -20,60 +11,37 @@ import TemperatureDetails from './components/details/TemperatureDetails';
 import HumidityDetails from './components/details/HumidityDetails';
 import LightDetails from './components/details/LightDetails';
 import AirQualityDetails from './components/details/AirQualityDetails';
-import Login from './components/Login';
+import Login from './components/auth/Login';
+import Register from './components/auth/Register';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import { AuthProvider } from './contexts/authContext';
+import Header from './components/Header';
 
-const { Content, Sider } = Layout;
+const { Content } = Layout;
 
 function App() {
   return (
-    <Router>
-      <Layout style={{ minHeight: '100vh' }}>
-        <Sider theme="dark" width={200} collapsible>
-          <Menu
-            theme="dark"
-            mode="inline"
-            defaultSelectedKeys={['1']}
-          >
-            <Menu.Item key="1" icon={<FaTachometerAlt />}>
-              <Link to="/">Dashboard</Link>
-            </Menu.Item>
-            <Menu.Item key="2" icon={<FaUser />}>
-              <Link to="/profile">Profile</Link>
-            </Menu.Item>
-            <Menu.Item key="3" icon={<FaTemperatureHigh />}>
-              <Link to="/temperature">Temperature</Link>
-            </Menu.Item>
-            <Menu.Item key="4" icon={<FaTint />}>
-              <Link to="/humidity">Humidity</Link>
-            </Menu.Item>
-            <Menu.Item key="5" icon={<FaLightbulb />}>
-              <Link to="/light">Light</Link>
-            </Menu.Item>
-            <Menu.Item key="6" icon={<FaWind />}>
-              <Link to="/air-quality">Air Quality</Link>
-            </Menu.Item>
-            <Menu.Item key="7" icon={<FaSignInAlt />}>
-              <Link to="/login">Login</Link>
-            </Menu.Item>
-          </Menu>
-        </Sider>
+    <AuthProvider>
+      <Router>
+        <Header />
         <Layout>
-          <Content style={{ margin: '24px 16px 0' }}>
-            <div style={{ padding: 24, minHeight: 360, background: '#fff' }}>
+          <Content>
+            <div>
               <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/temperature" element={<TemperatureDetails />} />
-                <Route path="/humidity" element={<HumidityDetails />} />
-                <Route path="/light" element={<LightDetails />} />
-                <Route path="/air-quality" element={<AirQualityDetails />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/temperature" element={<ProtectedRoute><TemperatureDetails /></ProtectedRoute>} />
+                <Route path="/humidity" element={<ProtectedRoute><HumidityDetails /></ProtectedRoute>} />
+                <Route path="/light" element={<ProtectedRoute><LightDetails /></ProtectedRoute>} />
+                <Route path="/air-quality" element={<ProtectedRoute><AirQualityDetails /></ProtectedRoute>} />
               </Routes>
             </div>
           </Content>
         </Layout>
-      </Layout>
-    </Router>
+      </Router>
+    </AuthProvider>
   );
 }
 
