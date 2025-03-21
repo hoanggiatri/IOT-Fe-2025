@@ -12,30 +12,44 @@ const Header = () => {
   const navigate = useNavigate();
   const { userLoggedIn } = useAuth();
 
+  const menuItems = [
+    {
+      key: '1',
+      label: <Link to="/living-room">Living Room</Link>,
+    },
+    {
+      key: '2',
+      label: <Link to="/bedroom-1">Bedroom 1</Link>,
+    },
+    {
+      key: '3',
+      label: <Link to="/bedroom-2">Bedroom 2</Link>,
+    },
+    {
+      key: '4',
+      label: <Link to="/kitchen">Kitchen</Link>,
+    },
+    {
+      key: '5',
+      label: <Link to="/devices">Device Management</Link>,
+    },
+    {
+      key: '6',
+      label: <Link to="/profile">Profile</Link>,
+    }
+  ];
+
   return (
     <AntHeader className="header">
       {userLoggedIn ? (
         <>
-          <Menu theme="dark" mode="horizontal" defaultSelectedKeys={['1']} style={{ flex: 1 }}>
-            <Menu.Item key="1">
-              <Link to="/">Dashboard</Link>
-            </Menu.Item>
-            <Menu.Item key="2">
-              <Link to="/profile">Profile</Link>
-            </Menu.Item>
-            <Menu.Item key="3">
-              <Link to="/temperature">Temperature</Link>
-            </Menu.Item>
-            <Menu.Item key="4">
-              <Link to="/humidity">Humidity</Link>
-            </Menu.Item>
-            <Menu.Item key="5">
-              <Link to="/light">Light</Link>
-            </Menu.Item>
-            <Menu.Item key="6">
-              <Link to="/air-quality">Air Quality</Link>
-            </Menu.Item>
-          </Menu>
+          <Menu 
+            theme="dark" 
+            mode="horizontal" 
+            defaultSelectedKeys={['1']} 
+            style={{ flex: 1 }}
+            items={menuItems}
+          />
           <div className="auth-buttons">
             <Button
               type="primary"

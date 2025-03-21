@@ -1,200 +1,98 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Statistic } from 'antd';
-import {
-  FaThermometerHalf,
-  FaTint,
-  FaLightbulb,
-  FaWind
-} from 'react-icons/fa';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-} from 'chart.js';
-import { Line } from 'react-chartjs-2';
-import { CHART_COLORS, SENSOR_UNITS } from '../utils/constants';
+import { Card, Row, Col, Switch, Statistic } from 'antd';
+import { Link } from 'react-router-dom';
+import { ROOMS } from '../utils/constants';
 import '../styles/components/Dashboard.css';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
 const Dashboard = () => {
-  const [sensorData, setSensorData] = useState({
-    temperature: [],
-    humidity: [],
-    light: [],
-    airQuality: []
-  });
+  const [roomsData, setRoomsData] = useState({});
 
   useEffect(() => {
-    const updateInterval = setInterval(() => {
-      setSensorData(prev => ({
-        temperature: [...prev.temperature, {
-          time: new Date().toLocaleTimeString(),
-          value: Math.random() * 10 + 20 // 20-30°C
-        }].slice(-10),
-        humidity: [...prev.humidity, {
-          time: new Date().toLocaleTimeString(),
-          value: Math.random() * 20 + 40 // 40-60%
-        }].slice(-10),
-        light: [...prev.light, {
-          time: new Date().toLocaleTimeString(),
-          value: Math.random() * 500 + 100 // 100-600 lux
-        }].slice(-10),
-        airQuality: [...prev.airQuality, {
-          time: new Date().toLocaleTimeString(),
-          value: Math.random() * 100 + 50 // 50-150 AQI
-        }].slice(-10)
-      }));
-    }, 2000);
+    // Giả lập dữ liệu realtime
+    const fetchRoomsData = () => {
+      const data = {};
+      Object.keys(ROOMS).forEach(roomKey => {
+        const room = ROOMS[roomKey];
+        data[room.id] = {
+          temperature: (Math.random() * 10 + 20).toFixed(1),
+          humidity: (Math.random() * 20 + 40).toFixed(1),
+          light: Math.floor(Math.random() * 500 + 100),
+          airQuality: Math.floor(Math.random() * 100 + 50),
+          devices: room.devices.reduce((acc, device) => {
+            acc[device] = Math.random() > 0.5;
+            return acc;
+          }, {})
+        };
+      });
+      setRoomsData(data);
+    };
 
-    return () => clearInterval(updateInterval);
+    fetchRoomsData();
+    const interval = setInterval(fetchRoomsData, 5000);
+    return () => clearInterval(interval);
   }, []);
 
-  const chartData = {
-    labels: sensorData.temperature.map(d => d.time),
-    datasets: [
-      {
-        label: `Temperature (${SENSOR_UNITS.temperature})`,
-        data: sensorData.temperature.map(d => d.value),
-        borderColor: CHART_COLORS.temperature,
-        backgroundColor: CHART_COLORS.temperature,
-        yAxisID: 'y',
-      },
-      {
-        label: `Humidity (${SENSOR_UNITS.humidity})`,
-        data: sensorData.humidity.map(d => d.value),
-        borderColor: CHART_COLORS.humidity,
-        backgroundColor: CHART_COLORS.humidity,
-        yAxisID: 'y',
-      },
-      {
-        label: `Light (${SENSOR_UNITS.light})`,
-        data: sensorData.light.map(d => d.value),
-        borderColor: CHART_COLORS.light,
-        backgroundColor: CHART_COLORS.light,
-        yAxisID: 'y',
-      },
-      {
-        label: `Air Quality (${SENSOR_UNITS.airQuality})`,
-        data: sensorData.airQuality.map(d => d.value),
-        borderColor: CHART_COLORS.airQuality,
-        backgroundColor: CHART_COLORS.airQuality,
-        yAxisID: 'y',
-      }
-    ]
-  };
-
-  const options = {
-    responsive: true,
-    interaction: {
-      mode: 'index',
-      intersect: false,
-    },
-    plugins: {
-      title: {
-        display: true,
-        text: 'Sensor Data Overview',
-        font: {
-          size: 20 // Larger title font
-        }
-      },
-      legend: {
-        position: 'top',
-        labels: {
-          font: {
-            size: 14 // Larger legend font
-          }
-        }
-      },
-      tooltip: {
-        callbacks: {
-          label: function (context) {
-            return `${context.dataset.label}: ${context.raw}`;
-          }
+  const handleDeviceToggle = (roomId, device) => {
+    setRoomsData(prev => ({
+      ...prev,
+      [roomId]: {
+        ...prev[roomId],
+        devices: {
+          ...prev[roomId].devices,
+          [device]: !prev[roomId].devices[device]
         }
       }
-    },
-    scales: {
-      y: {
-        type: 'linear',
-        display: true,
-        position: 'left',
-        ticks: {
-          font: {
-            size: 12 // Larger axis labels
-          }
-        }
-      },
-      x: {
-        ticks: {
-          font: {
-            size: 12 // Larger axis labels
-          }
-        }
-      }
-    }
+    }));
   };
 
   return (
     <div className="dashboard">
       <Row gutter={[16, 16]}>
-        <Col span={6}>
-          <Card className="card-temperature">
-            <Statistic
-              title="Temperature"
-              value={sensorData.temperature[sensorData.temperature.length - 1]?.value.toFixed(1)}
-              suffix="°C"
-              prefix={<FaThermometerHalf />}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card className="card-humidity">
-            <Statistic
-              title="Humidity"
-              value={sensorData.humidity[sensorData.humidity.length - 1]?.value.toFixed(1)}
-              suffix="%"
-              prefix={<FaTint />}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card className="card-light">
-            <Statistic
-              title="Light"
-              value={sensorData.light[sensorData.light.length - 1]?.value.toFixed(1)}
-              suffix="lux"
-              prefix={<FaLightbulb />}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card className="card-air-quality">
-            <Statistic
-              title="Air Quality"
-              value={sensorData.airQuality[sensorData.airQuality.length - 1]?.value.toFixed(1)}
-              suffix="AQI"
-              prefix={<FaWind />}
-            />
-          </Card>
-        </Col>
+        {Object.keys(ROOMS).map(roomKey => {
+          const room = ROOMS[roomKey];
+          const data = roomsData[room.id];
+
+          return (
+            <Col xs={24} sm={12} lg={6} key={room.id}>
+              <Card 
+                title={room.name}
+                extra={<Link to={`/details/${room.id}`}>Details</Link>}
+                className="room-card"
+              >
+                {data && (
+                  <>
+                    <div className="sensors-data">
+                      {room.sensors.includes('temperature') && (
+                        <Statistic title="Temperature" value={`${data.temperature}°C`} />
+                      )}
+                      {room.sensors.includes('humidity') && (
+                        <Statistic title="Humidity" value={`${data.humidity}%`} />
+                      )}
+                      {room.sensors.includes('light') && (
+                        <Statistic title="Light" value={`${data.light} lux`} />
+                      )}
+                      {room.sensors.includes('airQuality') && (
+                        <Statistic title="Air Quality" value={`${data.airQuality} AQI`} />
+                      )}
+                    </div>
+                    <div className="devices-control">
+                      {room.devices.map(device => (
+                        <div key={device} className="device-item">
+                          <span>{device.replace('-', ' ').toUpperCase()}</span>
+                          <Switch
+                            checked={data.devices[device]}
+                            onChange={() => handleDeviceToggle(room.id, device)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </Card>
+            </Col>
+          )})
+        }
       </Row>
-      <div className="chart-container">
-        <Line options={options} data={chartData} />
-      </div>
     </div>
   );
 };

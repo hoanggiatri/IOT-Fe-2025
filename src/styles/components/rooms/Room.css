@@ -1,0 +1,45 @@
+.room-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.chart-container {
+  width: 100%;
+  height: 400px;
+  position: relative;
+}
+
+.ant-card {
+  height: 100%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.ant-statistic-title {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.ant-statistic-content {
+  font-size: 20px;
+  color: #1890ff;
+}
+
+.ant-card-head-title {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.ant-space-vertical {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .room-container {
+    padding: 16px;
+  }
+
+  .chart-container {
+    height: 300px;
+  }
+}

@@ -1,0 +1,32 @@
+.sensor-details {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+.sensor-details h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.ant-picker {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.ant-table {
+  font-size: 14px;
+  margin-top: 20px;
+}
+
+.ant-table-tbody > tr > td {
+  padding: 8px;
+}
+
+.ant-table-thead > tr > th {
+  padding: 8px;
+  font-weight: bold;
+}

@@ -1,5 +1,5 @@
 .dashboard {
-  padding: 20px;
+  padding: 24px;
 }
 
 .chart-container {
@@ -41,4 +41,27 @@
 
 .card-air-quality {
   background-color: #e6e6e6;
+}
+
+.room-card {
+  height: 100%;
+}
+
+.sensors-data {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.devices-control {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 16px;
+}
+
+.device-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
 }

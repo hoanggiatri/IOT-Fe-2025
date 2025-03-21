@@ -4,18 +4,18 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import 'antd/dist/reset.css';
 
-// Import your components
-import Dashboard from './components/Dashboard';
-import Profile from './components/Profile';
-import TemperatureDetails from './components/details/TemperatureDetails';
-import HumidityDetails from './components/details/HumidityDetails';
-import LightDetails from './components/details/LightDetails';
-import AirQualityDetails from './components/details/AirQualityDetails';
+import LivingRoom from './components/rooms/LivingRoom';
+import Bedroom1 from './components/rooms/Bedroom1';
+import Bedroom2 from './components/rooms/Bedroom2';
+import Kitchen from './components/rooms/Kitchen';
+import RoomDetails from './components/RoomDetails';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
+import Profile from './components/Profile';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthProvider } from './contexts/authContext';
 import Header from './components/Header';
+import DeviceManagement from './components/DeviceManagement';
 
 const { Content } = Layout;
 
@@ -26,18 +26,18 @@ function App() {
         <Header />
         <Layout>
           <Content>
-            <div>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                <Route path="/temperature" element={<ProtectedRoute><TemperatureDetails /></ProtectedRoute>} />
-                <Route path="/humidity" element={<ProtectedRoute><HumidityDetails /></ProtectedRoute>} />
-                <Route path="/light" element={<ProtectedRoute><LightDetails /></ProtectedRoute>} />
-                <Route path="/air-quality" element={<ProtectedRoute><AirQualityDetails /></ProtectedRoute>} />
-              </Routes>
-            </div>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/living-room" element={<ProtectedRoute><LivingRoom /></ProtectedRoute>} />
+              <Route path="/bedroom-1" element={<ProtectedRoute><Bedroom1 /></ProtectedRoute>} />
+              <Route path="/bedroom-2" element={<ProtectedRoute><Bedroom2 /></ProtectedRoute>} />
+              <Route path="/kitchen" element={<ProtectedRoute><Kitchen /></ProtectedRoute>} />
+              <Route path="/devices" element={<ProtectedRoute><DeviceManagement /></ProtectedRoute>} />
+              <Route path="/details/:roomId" element={<ProtectedRoute><RoomDetails /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/" element={<ProtectedRoute><LivingRoom /></ProtectedRoute>} />
+            </Routes>
           </Content>
         </Layout>
       </Router>
