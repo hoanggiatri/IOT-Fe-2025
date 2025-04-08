@@ -67,9 +67,8 @@ export const SENSOR_THRESHOLDS = {
   LIVING_ROOM: {
     temperature: { min: 18, max: 30 },
     humidity: { min: 30, max: 70 },
-    light: { min: 100, max: 1000 },
-    gas: { min: 0, max: 100 },
-    airQuality: { good: 0, moderate: 50, poor: 100, critical: 150 }
+    light: { min: 300, max: 1000 }, // Tiêu chuẩn ánh sáng phòng khách (lux)
+    gas: { min: 0, max: 100 } // ppm
   },
   BEDROOM_1: {
     temperature: { min: 18, max: 24, warning: 26, critical: 28 },
@@ -140,11 +139,23 @@ export const SENSOR_ADVICE = {
   smoke: {
     safe: 'No smoke detected.',
     warning: 'Smoke levels are elevated. Check for sources.',
-    danger: 'WARNING: High smoke levels detected! Check for fire!'
+    danger: 'WARNING: High smokWe levels detected! Check for fire!'
   },
   airQuality: {
     good: 'Air quality is good.',
     moderate: 'Air quality is moderate. Consider ventilation.',
     poor: 'Poor air quality. Increase ventilation.'
+  }
+};
+
+// Add warning messages
+export const WARNING_MESSAGES = {
+  LIGHT: {
+    LOW: "Ánh sáng quá thấp (< 300 lux). Bạn nên bật đèn!",
+    HIGH: "Ánh sáng quá cao (> 1000 lux). Bạn có thể tắt đèn để tiết kiệm điện!",
+  },
+  GAS: {
+    DANGER: "DANGER: Gas concentration is at dangerous level! Please ventilate immediately!",
+    WARNING: "Warning: Gas level is rising above safe threshold!"
   }
 };
