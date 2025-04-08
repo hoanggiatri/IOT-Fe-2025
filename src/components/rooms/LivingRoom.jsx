@@ -1,15 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Space, Button, Switch, Progress, Slider, Select, Modal } from 'antd';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, Row, Col, Statistic, Progress, Spin, Alert, Button, Switch, Space, message } from 'antd';
 import { Line } from 'react-chartjs-2';
+import { BarChartOutlined, BulbOutlined, FireOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { 
-  ROOMS, 
   CHART_COLORS, 
-  SENSOR_UNITS, 
-  LIGHT_STANDARDS,
-  SENSOR_THRESHOLDS,
-  DEVICE_SETTINGS,
-  SENSOR_ADVICE 
+  SENSOR_THRESHOLDS
 } from '../../utils/constants';
 import {
   Chart as ChartJS,
@@ -21,12 +17,10 @@ import {
   Tooltip as ChartTooltip,
   Legend
 } from 'chart.js';
-import { 
-  FireOutlined, 
-  CloudOutlined, 
-  BulbOutlined, 
-  SafetyCertificateOutlined} from '@ant-design/icons';
-import '../../styles/components/rooms/Room.css';
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { db } from '../../firebase/firebase';
+import dayjs from 'dayjs';
+import { getDatabase, ref, get, set } from 'firebase/database';
 
 ChartJS.register(
   CategoryScale,
@@ -39,55 +33,145 @@ ChartJS.register(
 );
 
 const LivingRoom = () => {
-  const room = ROOMS.LIVING_ROOM;
+  const navigate = useNavigate();
   const [data, setData] = useState([]);
-  const [deviceStates, setDeviceStates] = useState({
-    light: { on: false, level: DEVICE_SETTINGS.light.defaultLevel },
-    fan: { on: false, level: DEVICE_SETTINGS.fan.defaultLevel },
-    'air-conditioner': { 
-      on: false, 
-      temperature: DEVICE_SETTINGS['air-conditioner'].defaultTemp,
-      mode: DEVICE_SETTINGS['air-conditioner'].defaultMode
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [lightStatus, setLightStatus] = useState(false);
+  const [gasStatus, setGasStatus] = useState(false);
+  const [updating, setUpdating] = useState(false);
+
+  const database = getDatabase();
+
+  const parseTimestamp = (timestampStr) => {
+    const [datePart, timePart] = timestampStr.split('_');
+    const [year, month, day] = datePart.split('-');
+    const [hour, minute, second] = timePart.split('-');
+    return new Date(year, month - 1, day, hour, minute, second);
+  };
+
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const historiesRef = collection(db, "histories");
+      const q = query(
+        historiesRef,
+        orderBy("Timestamp", "desc"),
+        limit(10)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const historiesData = [];
+      
+      querySnapshot.forEach((doc) => {
+        const rawData = doc.data();
+        const timestamp = parseTimestamp(rawData.Timestamp);
+        
+        historiesData.push({
+          timestamp: timestamp,
+          temperature: Number(rawData.Temperature),
+          humidity: Number(rawData.Humidity),
+          lightLux: Number(rawData.LightValue),
+          gas: Number(rawData.GasValue)
+        });
+      });
+
+      setData(historiesData.reverse());
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError('Error loading data: ' + err.message);
+    } finally {
+      setIsLoading(false);
     }
-  });
-  const [showLightAlert, setShowLightAlert] = useState(false);
-  const [currentLightValue, setCurrentLightValue] = useState(0);
-
-  useEffect(() => {
-    const fetchData = () => {
-      const newData = {
-        timestamp: new Date(),
-        temperature: (Math.random() * 10 + 20).toFixed(1),
-        humidity: (Math.random() * 20 + 40).toFixed(1),
-        light: Math.floor(Math.random() * 250 + 100),
-        airQuality: Math.floor(Math.random() * 100 + 50),
-      };
-      setData(prevData => [...prevData, newData].slice(-10));
-    };
-
-    fetchData();
-    const interval = setInterval(fetchData, 10000);
-    return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    const latestData = data[data.length - 1];
-    if (latestData) {
-      setCurrentLightValue(latestData.light);
-      // Only show alert if light is below minimum AND lights are off
-      const isLightLow = latestData.light < LIGHT_STANDARDS.LIVING_ROOM.min;
-      const isLightOff = !deviceStates.light.on;
+  const fetchDeviceStatus = useCallback(async () => {
+    try {
+      const lightRef = ref(database, 'ledStatus/light');
+      const gasRef = ref(database, 'ledStatus/gas');
       
-      // Clear any existing alert if light level is good
-      if (latestData.light >= LIGHT_STANDARDS.LIVING_ROOM.min) {
-        setShowLightAlert(false);
-      }
-      // Show alert only if light is low and lights are off
-      else if (isLightLow && isLightOff) {
-        setShowLightAlert(true);
-      }
+      const [lightSnapshot, gasSnapshot] = await Promise.all([
+        get(lightRef),
+        get(gasRef)
+      ]);
+
+      setLightStatus(lightSnapshot.val());
+      setGasStatus(gasSnapshot.val());
+    } catch (error) {
+      console.error('Error fetching device status:', error);
+      message.error('Failed to fetch device status');
     }
-  }, [data, deviceStates.light.on]);
+  }, [database]);
+
+  const updateDeviceStatus = async (device, value) => {
+    setUpdating(true);
+    try {
+      await set(ref(database, `ledStatus/${device}`), value);
+      
+      if (device === 'light') {
+        setLightStatus(value);
+      } else {
+        setGasStatus(value);
+      }
+      message.success(`${device.toUpperCase()} ${value ? 'turned on' : 'turned off'}`);
+    } catch (error) {
+      console.error('Error updating device status:', error);
+      message.error('Failed to update device status');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+  useEffect(() => {
+    fetchDeviceStatus();
+    const interval = setInterval(fetchDeviceStatus, 5000);
+    return () => clearInterval(interval);
+  }, [fetchDeviceStatus]);
+
+  const chartData = {
+    labels: data.map(entry => 
+      dayjs(entry.timestamp).format('HH:mm:ss')
+    ),
+    datasets: [
+      {
+        label: 'Temperature (°C)',
+        data: data.map(entry => entry.temperature),
+        borderColor: CHART_COLORS.temperature,
+        backgroundColor: CHART_COLORS.temperature,
+        fill: false
+      },
+      {
+        label: 'Humidity (%)',
+        data: data.map(entry => entry.humidity),
+        borderColor: CHART_COLORS.humidity,
+        backgroundColor: CHART_COLORS.humidity,
+        fill: false
+      },
+      {
+        label: 'Light (lux)',
+        data: data.map(entry => entry.lightLux),
+        borderColor: CHART_COLORS.light,
+        backgroundColor: CHART_COLORS.light,
+        fill: false
+      },
+      {
+        label: 'Gas (ppm)',
+        data: data.map(entry => entry.gas),
+        borderColor: CHART_COLORS.gas,
+        backgroundColor: CHART_COLORS.gas,
+        fill: false
+      }
+    ]
+  };
 
   const chartOptions = {
     responsive: true,
@@ -98,304 +182,121 @@ const LivingRoom = () => {
       },
       title: {
         display: true,
-        text: 'Sensor Data History',
-      },
+        text: 'Sensor Data History'
+      }
     },
     scales: {
       y: {
-        beginAtZero: true,
-      },
-    },
-  };
-
-  const chartData = {
-    labels: data.map((_, index) => `${index + 1}m ago`),
-    datasets: room.sensors.map(sensor => ({
-      label: sensor.charAt(0).toUpperCase() + sensor.slice(1),
-      data: data.map(d => d[sensor]),
-      borderColor: CHART_COLORS[sensor],
-      backgroundColor: CHART_COLORS[sensor],
-      tension: 0.1
-    }))
-  };
-
-  const handleDeviceToggle = (device, checked) => {
-    setDeviceStates(prev => ({
-      ...prev,
-      [device]: { ...prev[device], on: checked }
-    }));
-  };
-
-  const handleDeviceLevelChange = (device, value) => {
-    setDeviceStates(prev => ({
-      ...prev,
-      [device]: { ...prev[device], level: value }
-    }));
-  };
-
-  const handleTemperatureChange = (value) => {
-    setDeviceStates(prev => ({
-      ...prev,
-      'air-conditioner': { ...prev['air-conditioner'], temperature: value }
-    }));
-  };
-
-  const handleModeChange = (value) => {
-    setDeviceStates(prev => ({
-      ...prev,
-      'air-conditioner': { ...prev['air-conditioner'], mode: value }
-    }));
-  };
-
-  const getSensorIcon = (sensor) => {
-    switch(sensor) {
-      case 'temperature':
-        return <FireOutlined />;
-      case 'humidity':
-        return <CloudOutlined />;
-      case 'light':
-        return <BulbOutlined />;
-      case 'airQuality':
-        return <SafetyCertificateOutlined />;
-      default:
-        return null;
+        beginAtZero: true
+      }
     }
   };
 
-  
-  const getSensorAdvice = (sensor, value) => {
-    const advice = SENSOR_ADVICE[sensor];
-    if (!advice) return '';
-  
-    if (sensor === 'light') {
-      const standard = LIGHT_STANDARDS.LIVING_ROOM;
-      if (value < standard.min) return 'Light level is too low for this room';
-      if (value > standard.max) return 'Light level is too high for this room';
-      return 'Light level is optimal';
-    }
-  
-    const thresholds = SENSOR_THRESHOLDS.LIVING_ROOM?.[sensor];
-    if (!thresholds) return '';
-  
-    if (sensor === 'airQuality') {
-      if (value <= thresholds.good) return advice.good;
-      if (value <= thresholds.moderate) return advice.moderate;
-      return advice.poor;
-    }
-  
-    if (value < thresholds.min) return advice.tooLow;
-    if (value > thresholds.max) return advice.tooHigh;
-    return advice.optimal;
-  };
-  
-  const renderSensorValue = (sensor, value) => {
-    const advice = getSensorAdvice(sensor, value);
-    const thresholds = sensor === 'light' 
-      ? LIGHT_STANDARDS.LIVING_ROOM 
-      : SENSOR_THRESHOLDS.LIVING_ROOM?.[sensor];
-  
-    const getProgressPercent = () => {
-      if (sensor === 'airQuality') return value;
-      if (sensor === 'light') return (value / thresholds.max) * 100;
-      if (thresholds?.max) return (value / thresholds.max) * 100;
-      return 0;
-    };
-  
-    const getProgressStatus = () => {
-      if (sensor === 'light') {
-        if (value < thresholds.min || value > thresholds.max) return 'warning';
-        return 'success';
-      }
-      
-      if (sensor === 'airQuality') {
-        if (value > thresholds.poor) return 'exception';
-        if (value > thresholds.moderate) return 'warning';
-        return 'success';
-      }
-  
-      if (!thresholds) return 'normal';
-  
-      if (value < thresholds.min || value > thresholds.max) return 'warning';
-      if (value > thresholds.critical) return 'exception';
-      return 'success';
-    };
-  
-    const getProgressColor = () => {
-      const status = getProgressStatus();
-      switch (status) {
-        case 'warning':
-          return '#faad14';
-        case 'exception':
-          return '#ff4d4f';
-        case 'success':
-          return '#52c41a';
-        default:
-          return '#1890ff';
-      }
-    };
-  
-    return (
+  const renderSensorValue = (label, value, unit, type) => (
+    <Col span={6}>
       <Card>
         <Statistic
-          title={sensor.charAt(0).toUpperCase() + sensor.slice(1)}
+          title={label}
           value={value}
-          suffix={SENSOR_UNITS[sensor]}
-          prefix={getSensorIcon(sensor)}
-          valueStyle={{ 
-            color: getProgressColor()
-          }}
+          suffix={unit}
+          precision={1}
         />
-        {advice && (
-          <Progress 
-            percent={Math.min(getProgressPercent(), 100)}
-            strokeColor={getProgressColor()}
-            showInfo={false}
-            size="small"
-            style={{ marginTop: 8 }}
-          />
-        )}
-        {advice && (
-          <div style={{ fontSize: '12px', color: '#666', marginTop: 4, textAlign: 'center' }}>
-            {advice}
-          </div>
-        )}
+        <Progress
+          percent={Math.min((value / SENSOR_THRESHOLDS.LIVING_ROOM[type]?.max || 100) * 100, 100)}
+          status={
+            value > SENSOR_THRESHOLDS.LIVING_ROOM[type]?.max ? 'exception' :
+            value < SENSOR_THRESHOLDS.LIVING_ROOM[type]?.min ? 'active' : 'success'
+          }
+        />
       </Card>
-    );
-  };
-  
-  const renderDeviceControl = (device) => {
-    const settings = DEVICE_SETTINGS[device];
-    const state = deviceStates[device];
+    </Col>
+  );
 
+  if (isLoading) {
     return (
-      <Card size="small" title={device.replace('-', ' ').toUpperCase()}>
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <Switch
-            checked={state.on}
-            onChange={(checked) => handleDeviceToggle(device, checked)}
-          />
-          {state.on && settings.type === 'dimmer' && (
-            <Slider
-              min={0}
-              max={100}
-              value={state.level}
-              onChange={(value) => handleDeviceLevelChange(device, value)}
-              marks={{ 0: '0%', 50: '50%', 100: '100%' }}
-            />
-          )}
-          {state.on && settings.type === 'speed' && (
-            <Select
-              value={state.level}
-              onChange={(value) => handleDeviceLevelChange(device, value)}
-              style={{ width: '100%' }}
-            >
-              {settings.levels.map(level => (
-                <Select.Option key={level} value={level}>
-                  Speed {level}
-                </Select.Option>
-              ))}
-            </Select>
-          )}
-          {state.on && settings.type === 'temperature' && (
-            <>
-              <Slider
-                min={settings.range.min}
-                max={settings.range.max}
-                value={state.temperature}
-                onChange={(value) => handleTemperatureChange(value)}
-                marks={{ 
-                  [settings.range.min]: `${settings.range.min}°C`,
-                  [settings.range.max]: `${settings.range.max}°C`
-                }}
-              />
-              <Select
-                value={state.mode}
-                onChange={(value) => handleModeChange(value)}
-                style={{ width: '100%' }}
-              >
-                {settings.modes.map(mode => (
-                  <Select.Option key={mode} value={mode}>
-                    {mode.toUpperCase()}
-                  </Select.Option>
-                ))}
-              </Select>
-            </>
-          )}
-        </Space>
-      </Card>
+      <div style={{ textAlign: 'center', padding: '50px' }}>
+        <Spin size="large" />
+      </div>
     );
-  };
+  }
 
-  const handleLightAlertConfirm = () => {
-    setDeviceStates(prev => ({
-      ...prev,
-      light: { 
-        ...prev.light, 
-        on: true,
-        level: 50 // Set to 50% brightness by default
-      }
-    }));
-    setShowLightAlert(false);
-  };
+  if (error) {
+    return <Alert message={error} type="error" />;
+  }
+
+  const latestData = data[data.length - 1] || {};
 
   return (
-    <div className="room-container">
-      <Row gutter={[16, 16]}>
-        <Col span={24}>
-          <Card title="Current Sensor Values">
-            <Row gutter={[16, 16]}>
-              {room.sensors.map(sensor => (
-                <Col xs={24} sm={12} md={6} key={sensor}>
-                  {renderSensorValue(
-                    sensor, 
-                    data[data.length - 1]?.[sensor] || 0
-                  )}
-                </Col>
-              ))}
-            </Row>
-          </Card>
-        </Col>
-
-        <Col span={24}>
+    <div style={{ padding: 24 }}>
+      {/* Header Row with sensors and View Detail button */}
+      <Row gutter={[16, 16]} align="middle" justify="space-between">
+        <Col flex="auto">
           <Row gutter={[16, 16]}>
-            <Col span={18}>
-              <Card 
-                title={room.name}
-                extra={<Button type="primary"><Link to={`/details/${room.id}`}>View Details</Link></Button>}
-              >
-                <div className="chart-container" style={{ height: '400px' }}>
-                  <Line options={chartOptions} data={chartData} />
-                </div>
-              </Card>
-            </Col>
-
-            <Col span={6}>
-              <Card title="Device Controls">
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  {room.devices.map(device => (
-                    <div key={device}>
-                      {renderDeviceControl(device)}
-                    </div>
-                  ))}
-                </Space>
-              </Card>
-            </Col>
+            {renderSensorValue('Temperature', latestData.temperature, '°C', 'temperature')}
+            {renderSensorValue('Humidity', latestData.humidity, '%', 'humidity')}
+            {renderSensorValue('Light', latestData.lightLux, 'lux', 'light')}
+            {renderSensorValue('Gas', latestData.gas, 'ppm', 'gas')}
           </Row>
         </Col>
+        <Col>
+          <Button 
+            type="primary"
+            icon={<BarChartOutlined />}
+            onClick={() => navigate('/living-room/detail')}
+          >
+            View Detail
+          </Button>
+        </Col>
       </Row>
-      <Modal
-        title="Low Light Warning"
-        open={showLightAlert}
-        onOk={handleLightAlertConfirm}
-        onCancel={() => setShowLightAlert(false)}
-        okText="Turn On Light"
-        cancelText="Ignore"
-      >
-        <Space direction="vertical">
-          <p>The current light level ({currentLightValue} lux) is below the recommended minimum ({LIGHT_STANDARDS.LIVING_ROOM.min} lux).</p>
-          <p>Would you like to turn on the lights?</p>
-        </Space>
-      </Modal>
+
+      {/* Chart and Controls Row */}
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col flex="auto">
+          <Card>
+            <div style={{ height: 400 }}>
+              <Line options={chartOptions} data={chartData} />
+            </div>
+          </Card>
+        </Col>
+        <Col style={{ width: 200 }}>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Card size="small">
+              <Space direction="vertical" align="center" style={{ width: '100%' }}>
+                <BulbOutlined style={{ 
+                  fontSize: '24px', 
+                  color: lightStatus ? '#faad14' : 'rgba(0,0,0,0.45)'
+                }} />
+                <Switch
+                  style={{ width: 70 }}
+                  checked={lightStatus}
+                  loading={updating}
+                  onChange={(checked) => updateDeviceStatus('light', checked)}
+                  checkedChildren="ON"
+                  unCheckedChildren="OFF"
+                />
+                <span>Light Control</span>
+              </Space>
+            </Card>
+            <Card size="small">
+              <Space direction="vertical" align="center" style={{ width: '100%' }}>
+                <FireOutlined style={{ 
+                  fontSize: '24px', 
+                  color: gasStatus ? '#ff4d4f' : 'rgba(0,0,0,0.45)'
+                }} />
+                <Switch
+                  style={{ width: 70 }}
+                  checked={gasStatus}
+                  loading={updating}
+                  onChange={(checked) => updateDeviceStatus('gas', checked)}
+                  checkedChildren="ON"
+                  unCheckedChildren="OFF"
+                />
+                <span>Gas Control</span>
+              </Space>
+            </Card>
+          </Space>
+        </Col>
+      </Row>
     </div>
   );
 };

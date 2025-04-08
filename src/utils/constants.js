@@ -1,19 +1,16 @@
 export const CHART_COLORS = {
   temperature: 'rgb(255, 99, 132)',
-  humidity: 'rgb(53, 162, 235)',
-  light: 'rgb(255, 205, 86)',
-  airQuality: 'rgb(75, 192, 192)',
-  gas: 'rgb(153, 102, 255)',
-  smoke: 'rgb(255, 159, 64)'
+  humidity: 'rgb(54, 162, 235)',
+  light: 'rgb(255, 206, 86)',
+  gas: 'rgb(75, 192, 192)'
 };
 
 export const SENSOR_UNITS = {
   temperature: '°C',
   humidity: '%',
   light: 'lux',
-  airQuality: 'AQI',
-  gas: 'ppm',
-  smoke: 'ppm'
+  airQuality: 'ppm',
+  gas: 'ppm'
 };
 
 export const ROOMS = {
@@ -68,8 +65,10 @@ export const LIGHT_STANDARDS = {
 
 export const SENSOR_THRESHOLDS = {
   LIVING_ROOM: {
-    temperature: { min: 20, max: 26, warning: 28, critical: 30 },
-    humidity: { min: 30, max: 60, warning: 70, critical: 80 },
+    temperature: { min: 18, max: 30 },
+    humidity: { min: 30, max: 70 },
+    light: { min: 100, max: 1000 },
+    gas: { min: 0, max: 100 },
     airQuality: { good: 0, moderate: 50, poor: 100, critical: 150 }
   },
   BEDROOM_1: {

@@ -5,10 +5,10 @@ import './App.css';
 import 'antd/dist/reset.css';
 
 import LivingRoom from './components/rooms/LivingRoom';
+import LivingRoomDetail from './components/rooms/LivingRoomDetail';
 import Bedroom1 from './components/rooms/Bedroom1';
 import Bedroom2 from './components/rooms/Bedroom2';
 import Kitchen from './components/rooms/Kitchen';
-import RoomDetails from './components/RoomDetails';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import Profile from './components/Profile';
@@ -30,11 +30,11 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/living-room" element={<ProtectedRoute><LivingRoom /></ProtectedRoute>} />
+              <Route path="/living-room/detail" element={<ProtectedRoute><LivingRoomDetail /></ProtectedRoute>} />
               <Route path="/bedroom-1" element={<ProtectedRoute><Bedroom1 /></ProtectedRoute>} />
               <Route path="/bedroom-2" element={<ProtectedRoute><Bedroom2 /></ProtectedRoute>} />
               <Route path="/kitchen" element={<ProtectedRoute><Kitchen /></ProtectedRoute>} />
               <Route path="/devices" element={<ProtectedRoute><DeviceManagement /></ProtectedRoute>} />
-              <Route path="/details/:roomId" element={<ProtectedRoute><RoomDetails /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/" element={<ProtectedRoute><LivingRoom /></ProtectedRoute>} />
             </Routes>
