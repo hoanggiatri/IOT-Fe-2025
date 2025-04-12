@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Row, Col, Statistic, Progress, Spin, Alert, Button, Switch, Space, message, notification } from 'antd';
+import { Card, Row, Col, Statistic, Progress, Alert, Button, Switch, Space, message, notification } from 'antd';
 import { Line } from 'react-chartjs-2';
 import { BarChartOutlined, BulbOutlined, FireOutlined, CloudOutlined, ExperimentOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -37,7 +37,6 @@ const LivingRoom = () => {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
   const latestData = data[data.length - 1] || {};
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lightStatus, setLightStatus] = useState(false);
   const [gasStatus, setGasStatus] = useState(false);
@@ -53,7 +52,6 @@ const LivingRoom = () => {
   };
 
   const fetchData = useCallback(async () => {
-    setIsLoading(true);
     setError(null);
     
     try {
@@ -86,7 +84,6 @@ const LivingRoom = () => {
       console.error('Error fetching data:', err);
       setError('Error loading data: ' + err.message);
     } finally {
-      setIsLoading(false);
     }
   }, []);
 
@@ -125,17 +122,17 @@ const LivingRoom = () => {
     } finally {
       setUpdating(false);
     }
-  }, [database]); // Add database as dependency
+  }, [database]); 
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 5000);
+    const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
   useEffect(() => {
     fetchDeviceStatus();
-    const interval = setInterval(fetchDeviceStatus, 5000);
+    const interval = setInterval(fetchDeviceStatus, 10000);
     return () => clearInterval(interval);
   }, [fetchDeviceStatus]);
 
@@ -278,7 +275,7 @@ const LivingRoom = () => {
             description: WARNING_MESSAGES.LIGHT.LOW,
             duration: 3,
             placement: 'topRight',
-            btn: (
+            actions: (
               <Button type="primary" size="small" onClick={() => updateDeviceStatus('light', true)}>
                 Turn On Lights
               </Button>
@@ -293,7 +290,7 @@ const LivingRoom = () => {
             description: WARNING_MESSAGES.LIGHT.HIGH,
             duration: 3,
             placement: 'topRight',
-            btn: (
+            actions: (
               <Button type="primary" size="small" onClick={() => updateDeviceStatus('light', false)}>
                 Turn Off Lights
               </Button>
@@ -307,77 +304,6 @@ const LivingRoom = () => {
     return () => clearTimeout(notificationDelay);
   }, [latestData.gas, latestData.lightLux, lightStatus, updateDeviceStatus]);
 
-  useEffect(() => {
-    // Chỉ xử lý cảnh báo ánh sáng
-    const lightValue = latestData.lightLux;
-    
-    if (lightValue && lightValue < SENSOR_THRESHOLDS.LIVING_ROOM.light.min && !lightStatus) {
-      notification.warning({
-        key: 'light-warning-low',
-        message: 'Cảnh báo: Thiếu ánh sáng',
-        description: WARNING_MESSAGES.LIGHT.LOW,
-        duration: 0,
-        placement: 'topRight',
-        btn: (
-          <Button 
-            type="primary" 
-            size="small" 
-            onClick={() => {
-              updateDeviceStatus('light', true);
-              notification.destroy('light-warning-low'); // Changed from close to destroy
-            }}
-          >
-            Bật đèn ngay
-          </Button>
-        )
-      });
-    } else if (lightValue && lightValue > SENSOR_THRESHOLDS.LIVING_ROOM.light.max && lightStatus) {
-      notification.info({
-        key: 'light-warning-high',
-        message: 'Gợi ý: Dư ánh sáng',
-        description: WARNING_MESSAGES.LIGHT.HIGH,
-        duration: 0,
-        placement: 'topRight',
-        btn: (
-          <Button 
-            type="primary" 
-            size="small" 
-            onClick={() => {
-              updateDeviceStatus('light', false);
-              notification.destroy('light-warning-high'); // Changed from close to destroy
-            }}
-          >
-            Tắt đèn
-          </Button>
-        )
-      });
-    } else {
-      // Đóng các cảnh báo nếu điều kiện không còn thỏa mãn
-      notification.destroy(); // This will remove all notifications
-    }
-  }, [latestData.lightLux, lightStatus, updateDeviceStatus]);
-
-  useEffect(() => {
-    // Xử lý cảnh báo khí gas riêng
-    const gasValue = latestData.gas;
-    if (gasValue > SENSOR_THRESHOLDS.LIVING_ROOM.gas.max) {
-      notification.error({
-        key: 'gas-danger',
-        message: 'NGUY HIỂM: Nồng độ khí cao',
-        description: WARNING_MESSAGES.GAS.DANGER,
-        duration: 0,
-        placement: 'topRight'
-      });
-    }
-  }, [latestData.gas]);
-
-  if (isLoading) {
-    return (
-      <div className="loading-container">
-        <Spin size="large" />
-      </div>
-    );
-  }
 
   if (error) {
     return <Alert message={error} type="error" />;

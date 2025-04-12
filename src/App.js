@@ -1,6 +1,7 @@
 import React from 'react';
 import { Layout } from 'antd';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import '@ant-design/v5-patch-for-react-19';
 import './App.css';
 import 'antd/dist/reset.css';
 

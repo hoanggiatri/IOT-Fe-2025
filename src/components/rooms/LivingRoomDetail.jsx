@@ -116,13 +116,11 @@ const LivingRoomDetail = () => {
         });
       });
 
-      console.log('Parsed data:', historiesData); // For debugging
       setData(historiesData);
       if (historiesData.length > 0) {
         message.success(`Loaded ${historiesData.length} records`);
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
       message.error('Failed to load data');
     } finally {
       setLoading(false);
