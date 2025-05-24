@@ -1,7 +1,26 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Row, Col, Statistic, Progress, Alert, Button, Switch, Space, message, notification } from 'antd';
+import { Card, Row, Col, Statistic, Progress, Alert, Button, Switch, Space, message, notification, Typography, Divider, Badge, Tooltip, Popover } from 'antd';
 import { Line } from 'react-chartjs-2';
-import { BarChartOutlined, BulbOutlined, FireOutlined, CloudOutlined, ExperimentOutlined } from '@ant-design/icons';
+import { 
+  BulbOutlined, 
+  FireOutlined, 
+  CloudOutlined, 
+  ExperimentOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
+  CheckCircleOutlined,
+  WarningOutlined,
+  InfoCircleOutlined,
+  HistoryOutlined,
+  HomeOutlined,
+  LineChartOutlined,
+  DashboardOutlined,
+  SettingOutlined,
+  ThunderboltOutlined,
+  SecurityScanOutlined,
+  SoundOutlined,
+  MenuOutlined
+} from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { 
   CHART_COLORS, 
@@ -23,6 +42,11 @@ import { db } from '../../firebase/firebase';
 import dayjs from 'dayjs';
 import { getDatabase, ref, get, set } from 'firebase/database';
 
+// Import CSS
+import '../../styles/components/rooms/Room.css';
+
+const { Title: AntTitle } = Typography;
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -41,6 +65,7 @@ const LivingRoom = () => {
   const [lightStatus, setLightStatus] = useState(false);
   const [gasStatus, setGasStatus] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const database = getDatabase();
 
@@ -80,10 +105,11 @@ const LivingRoom = () => {
 
       setData(historiesData.reverse());
       setError(null);
+      setLoading(false);
     } catch (err) {
       console.error('Error fetching data:', err);
       setError('Error loading data: ' + err.message);
-    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -126,13 +152,13 @@ const LivingRoom = () => {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 10000);
+    const interval = setInterval(fetchData, 1000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
   useEffect(() => {
     fetchDeviceStatus();
-    const interval = setInterval(fetchDeviceStatus, 10000);
+    const interval = setInterval(fetchDeviceStatus, 1000);
     return () => clearInterval(interval);
   }, [fetchDeviceStatus]);
 
@@ -146,28 +172,32 @@ const LivingRoom = () => {
         data: data.map(entry => entry.temperature),
         borderColor: CHART_COLORS.temperature,
         backgroundColor: CHART_COLORS.temperature,
-        fill: false
+        fill: false,
+        tension: 0.4
       },
       {
         label: 'Humidity (%)',
         data: data.map(entry => entry.humidity),
         borderColor: CHART_COLORS.humidity,
         backgroundColor: CHART_COLORS.humidity,
-        fill: false
+        fill: false,
+        tension: 0.4
       },
       {
         label: 'Light (lux)',
         data: data.map(entry => entry.lightLux),
         borderColor: CHART_COLORS.light,
         backgroundColor: CHART_COLORS.light,
-        fill: false
+        fill: false,
+        tension: 0.4
       },
       {
         label: 'Gas (ppm)',
         data: data.map(entry => entry.gas),
         borderColor: CHART_COLORS.gas,
         backgroundColor: CHART_COLORS.gas,
-        fill: false
+        fill: false,
+        tension: 0.4
       }
     ]
   };
@@ -178,69 +208,166 @@ const LivingRoom = () => {
     plugins: {
       legend: {
         position: 'top',
+        labels: {
+          boxWidth: 15,
+          usePointStyle: true,
+          pointStyle: 'circle',
+          padding: 20
+        }
       },
       title: {
         display: true,
-        text: 'Sensor Data History'
+        text: 'Sensor Data History',
+        font: {
+          size: 16,
+          weight: 'bold'
+        },
+        padding: {
+          top: 10,
+          bottom: 20
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(255,255,255,0.9)',
+        titleColor: '#333',
+        bodyColor: '#666',
+        borderColor: '#ddd',
+        borderWidth: 1,
+        padding: 10,
+        boxPadding: 3,
+        usePointStyle: true,
+        callbacks: {
+          label: function(context) {
+            let label = context.dataset.label || '';
+            if (label) {
+              label += ': ';
+            }
+            if (context.parsed.y !== null) {
+              label += context.parsed.y;
+            }
+            return label;
+          }
+        }
       }
     },
     scales: {
       y: {
-        beginAtZero: true
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.05)'
+        },
+        border: {
+          dash: [4, 4]
+        },
+        ticks: {
+          padding: 10
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          maxRotation: 0,
+          autoSkip: true,
+          maxTicksLimit: 10
+        }
+      }
+    },
+    elements: {
+      point: {
+        radius: 3,
+        hoverRadius: 5,
+        borderWidth: 2
+      },
+      line: {
+        borderWidth: 2,
+        tension: 0.4
+      }
+    },
+    interaction: {
+      mode: 'index',
+      intersect: false
+    },
+    animations: {
+      tension: {
+        duration: 1000,
+        easing: 'linear'
+      }
+    },
+    layout: {
+      padding: {
+        top: 10,
+        right: 16,
+        bottom: 10,
+        left: 16
       }
     }
   };
 
-  const renderSensorCard = (icon, label, value, unit, type) => (
-    <Card className="sensor-card">
-      <div className="sensor-icon">
-        {icon}
-      </div>
-      <Statistic
-        title={label}
-        value={value}
-        suffix={unit}
-        precision={1}
-        valueStyle={{
-          color: 
-            type === 'gas' && value > SENSOR_THRESHOLDS.LIVING_ROOM.gas.max * 0.7 ? '#cf1322' :
-            type === 'light' && !lightStatus && value < SENSOR_THRESHOLDS.LIVING_ROOM.light.min ? '#faad14' :
-            undefined
-        }}
-      />
-      <Progress
-        percent={Math.min((value / SENSOR_THRESHOLDS.LIVING_ROOM[type]?.max || 100) * 100, 100)}
-        status={
-          type === 'gas' && value > SENSOR_THRESHOLDS.LIVING_ROOM.gas.max ? 'exception' :
-          type === 'gas' && value > SENSOR_THRESHOLDS.LIVING_ROOM.gas.max * 0.7 ? 'warning' :
-          type === 'light' && value < SENSOR_THRESHOLDS.LIVING_ROOM.light.min ? 'warning' :
-          type === 'light' && value > SENSOR_THRESHOLDS.LIVING_ROOM.light.max ? 'exception' :
-          'success'
-        }
-      />
-    </Card>
-  );
+  const getSensorStatus = (type, value) => {
+    const thresholds = SENSOR_THRESHOLDS.LIVING_ROOM[type];
+    if (!thresholds) return { icon: <InfoCircleOutlined />, color: '#1890ff' };
 
-  const renderDeviceControl = (icon, label, status, onChange) => (
-    <Card className="device-card">
-      <Space direction="vertical" align="center" style={{ width: '100%' }}>
-        {React.cloneElement(icon, { 
-          style: { 
-            fontSize: '24px',
-            color: status ? '#1890ff' : 'rgba(0,0,0,0.45)'
-          }
-        })}
-        <Switch
-          checked={status}
-          loading={updating}
-          onChange={onChange}
-          checkedChildren="ON"
-          unCheckedChildren="OFF"
+    if (type === 'gas') {
+      if (value > thresholds.max) 
+        return { icon: <WarningOutlined />, color: '#cf1322' };
+      if (value > thresholds.max * 0.7) 
+        return { icon: <WarningOutlined />, color: '#faad14' };
+      return { icon: <CheckCircleOutlined />, color: '#52c41a' };
+    }
+    
+    if (type === 'light') {
+      if (value < thresholds.min) 
+        return { icon: <ArrowDownOutlined />, color: '#faad14' };
+      if (value > thresholds.max) 
+        return { icon: <ArrowUpOutlined />, color: '#faad14' };
+      return { icon: <CheckCircleOutlined />, color: '#52c41a' };
+    }
+    
+    if (value < thresholds.min) return { icon: <ArrowDownOutlined />, color: '#faad14' };
+    if (value > thresholds.max) return { icon: <ArrowUpOutlined />, color: '#faad14' };
+    return { icon: <CheckCircleOutlined />, color: '#52c41a' };
+  };
+
+  const renderSensorCard = (icon, label, value, unit, type) => {
+    const status = getSensorStatus(type, value);
+    return (
+      <Card className="sensor-card" hoverable>
+        <div className="sensor-header">
+          <div className="sensor-icon" style={{ color: status.color }}>
+            {icon}
+          </div>
+          <span className="sensor-status" style={{ color: status.color }}>
+            {status.icon}
+          </span>
+        </div>
+        <Statistic
+          title={label}
+          value={value}
+          suffix={unit}
+          precision={1}
+          valueStyle={{
+            color: status.color,
+            fontSize: '28px'
+          }}
         />
-        <span>{label}</span>
-      </Space>
-    </Card>
-  );
+        <Progress
+          percent={Math.min((value / SENSOR_THRESHOLDS.LIVING_ROOM[type]?.max || 100) * 100, 100)}
+          strokeColor={status.color}
+          status={
+            type === 'gas' && value > SENSOR_THRESHOLDS.LIVING_ROOM.gas.max ? 'exception' :
+            type === 'gas' && value > SENSOR_THRESHOLDS.LIVING_ROOM.gas.max * 0.7 ? 'warning' :
+            type === 'light' && value < SENSOR_THRESHOLDS.LIVING_ROOM.light.min ? 'warning' :
+            type === 'light' && value > SENSOR_THRESHOLDS.LIVING_ROOM.light.max ? 'exception' :
+            'success'
+          }
+          strokeWidth={8}
+          showInfo={false}
+        />
+      </Card>
+    );
+  };
 
   useEffect(() => {
     // Debounce notifications to prevent spam
@@ -252,7 +379,7 @@ const LivingRoom = () => {
           key: 'gas-danger',
           message: 'Dangerous Gas Level',
           description: WARNING_MESSAGES.GAS.DANGER,
-          duration: 0,
+          duration: 3,
           placement: 'topRight',
         });
       } else if (gasValue > SENSOR_THRESHOLDS.LIVING_ROOM.gas.max * 0.7) {
@@ -309,82 +436,204 @@ const LivingRoom = () => {
     return <Alert message={error} type="error" />;
   }
 
-  return (
-    <div style={{ padding: 24 }}>
-      {/* Header Row with sensors */}
-      <Row gutter={[16, 16]}>
-        <Col span={6}>
-          {renderSensorCard(
-            <FireOutlined style={{ color: '#ff4d4f' }} />,
-            'Temperature',
-            latestData.temperature,
-            '°C',
-            'temperature'
-          )}
-        </Col>
-        <Col span={6}>
-          {renderSensorCard(
-            <CloudOutlined style={{ color: '#1890ff' }} />,
-            'Humidity',
-            latestData.humidity,
-            '%',
-            'humidity'
-          )}
-        </Col>
-        <Col span={6}>
-          {renderSensorCard(
-            <BulbOutlined style={{ color: '#faad14' }} />,
-            'Light',
-            latestData.lightLux,
-            'lux',
-            'light'
-          )}
-        </Col>
-        <Col span={6}>
-          {renderSensorCard(
-            <ExperimentOutlined style={{ color: '#722ed1' }} />,
-            'Gas',
-            latestData.gas,
-            'ppm',
-            'gas'
-          )}
-        </Col>
-      </Row>
+  if (loading) {
+    return <div className="loading-container">Loading sensor data...</div>;
+  }
 
-      {/* Chart and Controls Row */}
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col span={18}>
-          <Card>
-            <div style={{ height: 400 }}>
-              <Line options={chartOptions} data={chartData} />
+  return (
+    <div className="room-page">
+      <div className="room-container">
+        <div className="dashboard-header">
+          <div className="dashboard-title-section">
+            <AntTitle level={3} className="dashboard-title">
+              <HomeOutlined /> Living Room Dashboard
+            </AntTitle>
+            <div className="last-updated">
+              <HistoryOutlined /> Last updated: {dayjs(latestData.timestamp).format('HH:mm:ss DD/MM/YYYY')}
             </div>
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Space direction="vertical" style={{ width: '100%' }}>
-            {renderDeviceControl(
-              <BulbOutlined />,
-              'Light Control',
-              lightStatus,
-              (checked) => updateDeviceStatus('light', checked)
+          </div>
+          <div className="dashboard-actions">
+            <Tooltip title="View Detailed Analysis">
+              <Button 
+                type="primary" 
+                icon={<LineChartOutlined />}
+                onClick={() => navigate('/living-room/detail')}
+                className="view-detail-button"
+              >
+                View Details
+              </Button>
+            </Tooltip>
+            <Tooltip title="Settings">
+              <Button 
+                icon={<SettingOutlined />} 
+                className="settings-button"
+              />
+            </Tooltip>
+          </div>
+        </div>
+        <Divider />
+        
+        {/* Quick stats cards */}
+        <div className="quick-summary">
+          <Popover 
+            content="Energy consumption is lower than yesterday" 
+            title="Energy Status"
+            trigger="hover"
+          >
+            <div className="summary-item">
+              <ThunderboltOutlined className="summary-icon energy" />
+              <div className="summary-details">
+                <div className="summary-title">Energy</div>
+                <div className="summary-value">-8.5%</div>
+              </div>
+            </div>
+          </Popover>
+          
+          <Popover 
+            content="All systems are functioning normally" 
+            title="System Status"
+            trigger="hover"
+          >
+            <div className="summary-item">
+              <CheckCircleOutlined className="summary-icon systems" />
+              <div className="summary-details">
+                <div className="summary-title">Systems</div>
+                <div className="summary-value">Normal</div>
+              </div>
+            </div>
+          </Popover>
+
+          <Popover 
+            content="All doors and windows are secured" 
+            title="Security Status"
+            trigger="hover"
+          >
+            <div className="summary-item">
+              <SecurityScanOutlined className="summary-icon security" />
+              <div className="summary-details">
+                <div className="summary-title">Security</div>
+                <div className="summary-value">Secured</div>
+              </div>
+            </div>
+          </Popover>
+        </div>
+        
+        {/* Header Row with sensors */}
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={12} md={6}>
+            {renderSensorCard(
+              <FireOutlined style={{ fontSize: '24px' }} />,
+              'Temperature',
+              latestData.temperature,
+              '°C',
+              'temperature'
             )}
-            {renderDeviceControl(
-              <FireOutlined />,
-              'Gas Control',
-              gasStatus,
-              (checked) => updateDeviceStatus('gas', checked)
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            {renderSensorCard(
+              <CloudOutlined style={{ fontSize: '24px' }} />,
+              'Humidity',
+              latestData.humidity,
+              '%',
+              'humidity'
             )}
-            <Button 
-              type="primary" 
-              icon={<BarChartOutlined />}
-              onClick={() => navigate('/living-room/detail')}
-              block
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            {renderSensorCard(
+              <BulbOutlined style={{ fontSize: '24px' }} />,
+              'Light',
+              latestData.lightLux,
+              'lux',
+              'light'
+            )}
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            {renderSensorCard(
+              <ExperimentOutlined style={{ fontSize: '24px' }} />,
+              'Gas',
+              latestData.gas,
+              'ppm',
+              'gas'
+            )}
+          </Col>
+        </Row>
+
+        {/* Chart and Controls Row */}
+        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          <Col xs={24} md={18}>
+            <Card className="chart-card" 
+              hoverable 
+              title={
+                <div className="chart-title">
+                  <DashboardOutlined /> Sensor Data Trends
+                </div>
+              }
+              extra={
+                <div className="chart-actions">
+                  <Button type="text" icon={<SoundOutlined />} size="small" className="action-button" />
+                  <Button type="text" icon={<MenuOutlined />} size="small" className="action-button" />
+                </div>
+              }
             >
-              View Detail
-            </Button>
-          </Space>
-        </Col>
-      </Row>
+              <div className="chart-container">
+                <Line options={chartOptions} data={chartData} />
+              </div>
+            </Card>
+          </Col>
+          <Col xs={24} md={6}>
+            <Card 
+              className="controls-card"
+              title={
+                <div className="controls-title">
+                  <SettingOutlined /> Device Controls
+                </div>
+              }
+            >
+              <div className="device-controls">
+                <div className="device-control-item">
+                  <div className="device-icon-container">
+                    <BulbOutlined className="device-icon" />
+                  </div>
+                  <div className="device-label">Light Control</div>
+                  <Switch
+                    checked={lightStatus}
+                    loading={updating}
+                    onChange={(checked) => updateDeviceStatus('light', checked)}
+                    checkedChildren="ON"
+                    unCheckedChildren="OFF"
+                    className="device-switch"
+                  />
+                </div>
+                
+                <div className="device-control-item">
+                  <div className="device-icon-container">
+                    <FireOutlined className="device-icon" />
+                  </div>
+                  <div className="device-label">Gas Control</div>
+                  <Switch
+                    checked={gasStatus}
+                    loading={updating}
+                    onChange={(checked) => updateDeviceStatus('gas', checked)}
+                    checkedChildren="ON"
+                    unCheckedChildren="OFF"
+                    className="device-switch"
+                  />
+                </div>
+              </div>
+            </Card>
+          </Col>
+        </Row>
+        
+        <div className="dashboard-footer">
+          <div className="footer-status">
+            <Badge status={error ? "error" : "success"} />
+            {error ? "Connection Error" : "System Online"}
+          </div>
+          <div className="footer-copyright">
+            IoT Dashboard © {new Date().getFullYear()}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

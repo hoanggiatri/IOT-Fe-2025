@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Table, Space, Button, message, Tag, Empty, DatePicker } from 'antd';
-import { ArrowLeftOutlined, ReloadOutlined, LoadingOutlined } from '@ant-design/icons';
+import { Card, Table, Space, Button, message, Tag, Empty, DatePicker, InputNumber, Slider, Row, Col, Form } from 'antd';
+import { ArrowLeftOutlined, ReloadOutlined, LoadingOutlined, FilterOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
 import { db } from '../../firebase/firebase';
@@ -14,6 +14,13 @@ const LivingRoomDetail = () => {
   const [searchDate, setSearchDate] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [form] = Form.useForm();
+  const [filters, setFilters] = useState({
+    temperature: { min: null, max: null },
+    humidity: { min: null, max: null },
+    lightLux: { min: null, max: null },
+    gas: { min: null, max: null },
+  });
 
   const getStatusColor = (value, type) => {
     const thresholds = SENSOR_THRESHOLDS.LIVING_ROOM[type];
@@ -135,28 +142,59 @@ const LivingRoomDetail = () => {
     setFilteredData(data);
   }, [data]);
 
-  const handleSearch = async (date) => {
+  const handleSearch = async (date, sensorFilters = filters) => {
     setSearchLoading(true);
     // Add artificial delay to see loading effect
     await new Promise(resolve => setTimeout(resolve, 500));
     
     try {
-      if (!date) {
-        setFilteredData(data);
-        setSearchLoading(false);
-        return;
+      let filtered = [...data];
+      
+      // Date filtering
+      if (date) {
+        const searchStr = date.format('DD/MM/YYYY');
+        filtered = filtered.filter(item => 
+          dayjs(item.timestamp).format('DD/MM/YYYY') === searchStr
+        );
       }
-  
-      const searchStr = date.format('DD/MM/YYYY');
-      const filtered = data.filter(item => 
-        dayjs(item.timestamp).format('DD/MM/YYYY') === searchStr
-      );
+      
+      // Temperature filtering
+      if (sensorFilters.temperature.min !== null) {
+        filtered = filtered.filter(item => item.temperature >= sensorFilters.temperature.min);
+      }
+      if (sensorFilters.temperature.max !== null) {
+        filtered = filtered.filter(item => item.temperature <= sensorFilters.temperature.max);
+      }
+      
+      // Humidity filtering
+      if (sensorFilters.humidity.min !== null) {
+        filtered = filtered.filter(item => item.humidity >= sensorFilters.humidity.min);
+      }
+      if (sensorFilters.humidity.max !== null) {
+        filtered = filtered.filter(item => item.humidity <= sensorFilters.humidity.max);
+      }
+      
+      // Light filtering
+      if (sensorFilters.lightLux.min !== null) {
+        filtered = filtered.filter(item => item.lightLux >= sensorFilters.lightLux.min);
+      }
+      if (sensorFilters.lightLux.max !== null) {
+        filtered = filtered.filter(item => item.lightLux <= sensorFilters.lightLux.max);
+      }
+      
+      // Gas filtering
+      if (sensorFilters.gas.min !== null) {
+        filtered = filtered.filter(item => item.gas >= sensorFilters.gas.min);
+      }
+      if (sensorFilters.gas.max !== null) {
+        filtered = filtered.filter(item => item.gas <= sensorFilters.gas.max);
+      }
   
       setFilteredData(filtered);
       if (filtered.length === 0) {
-        message.info(`No data found for date: ${searchStr}`);
+        message.info(`No data found for the selected filters`);
       } else {
-        message.success(`Found ${filtered.length} records for date: ${searchStr}`);
+        message.success(`Found ${filtered.length} records matching your criteria`);
       }
     } catch (error) {
       message.error('Error while filtering data');
@@ -164,11 +202,37 @@ const LivingRoomDetail = () => {
       setSearchLoading(false);
     }
   };
+  
+  const handleFilterChange = (type, minOrMax, value) => {
+    const newFilters = { ...filters };
+    newFilters[type][minOrMax] = value;
+    setFilters(newFilters);
+  };
+  
+  const applyFilters = () => {
+    handleSearch(searchDate, filters);
+  };
+  
+  const resetFilters = () => {
+    form.resetFields();
+    setFilters({
+      temperature: { min: null, max: null },
+      humidity: { min: null, max: null },
+      lightLux: { min: null, max: null },
+      gas: { min: null, max: null },
+    });
+    handleSearch(searchDate, {
+      temperature: { min: null, max: null },
+      humidity: { min: null, max: null },
+      lightLux: { min: null, max: null },
+      gas: { min: null, max: null },
+    });
+  };
 
   // Kiểm tra nếu không có dữ liệu
   if (data.length === 0 && !loading) {
     return (
-      <div style={{ padding: 24, background: '#f0f2f5', minHeight: '100vh' }}>
+      <div style={{ padding: '84px 24px 24px', background: '#f0f2f5', minHeight: '100vh' }}>
         <Card>
           <Empty 
             description="No data found for selected date range" 
@@ -180,7 +244,7 @@ const LivingRoomDetail = () => {
   }
 
   return (
-    <div style={{ padding: 24, background: '#f0f2f5', minHeight: '100vh' }}>
+    <div style={{ padding: '84px 24px 24px', background: '#f0f2f5', minHeight: '100vh' }}>
       <Card
         title={
           <Space>
@@ -200,28 +264,149 @@ const LivingRoomDetail = () => {
               value={searchDate}
               onChange={(date) => {
                 setSearchDate(date);
-                handleSearch(date);
+                handleSearch(date, filters);
               }}
               allowClear={true}
               style={{ width: 200 }}
               format="DD/MM/YYYY"
-              disabled={loading || searchLoading} // Disable when either loading
-              suffixIcon={searchLoading ? <LoadingOutlined /> : undefined} // Show loading icon
+              disabled={loading || searchLoading}
+              suffixIcon={searchLoading ? <LoadingOutlined /> : undefined}
             />
             <Button 
               icon={<ReloadOutlined />} 
               onClick={() => {
                 setSearchDate(null);
-                setFilteredData(data);
+                resetFilters();
                 fetchData();
               }}
               loading={loading}
-              disabled={searchLoading} // Disable when searching
+              disabled={searchLoading}
             />
           </Space>
         }
-        style={{ borderRadius: '8px' }}
+        style={{ borderRadius: '8px', marginBottom: '16px' }}
       >
+        <Form
+          form={form}
+          layout="vertical"
+          style={{ marginBottom: '20px' }}
+        >
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12} md={6}>
+              <Form.Item label="Temperature (°C)">
+                <Row gutter={8}>
+                  <Col span={11}>
+                    <Form.Item name={['temperature', 'min']} noStyle>
+                      <InputNumber
+                        placeholder="Min"
+                        onChange={(value) => handleFilterChange('temperature', 'min', value)}
+                        style={{ width: '100%' }}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={2} style={{ textAlign: 'center' }}>-</Col>
+                  <Col span={11}>
+                    <Form.Item name={['temperature', 'max']} noStyle>
+                      <InputNumber
+                        placeholder="Max"
+                        onChange={(value) => handleFilterChange('temperature', 'max', value)}
+                        style={{ width: '100%' }}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Form.Item label="Humidity (%)">
+                <Row gutter={8}>
+                  <Col span={11}>
+                    <Form.Item name={['humidity', 'min']} noStyle>
+                      <InputNumber
+                        placeholder="Min"
+                        onChange={(value) => handleFilterChange('humidity', 'min', value)}
+                        style={{ width: '100%' }}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={2} style={{ textAlign: 'center' }}>-</Col>
+                  <Col span={11}>
+                    <Form.Item name={['humidity', 'max']} noStyle>
+                      <InputNumber
+                        placeholder="Max"
+                        onChange={(value) => handleFilterChange('humidity', 'max', value)}
+                        style={{ width: '100%' }}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Form.Item label="Light (lux)">
+                <Row gutter={8}>
+                  <Col span={11}>
+                    <Form.Item name={['lightLux', 'min']} noStyle>
+                      <InputNumber
+                        placeholder="Min"
+                        onChange={(value) => handleFilterChange('lightLux', 'min', value)}
+                        style={{ width: '100%' }}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={2} style={{ textAlign: 'center' }}>-</Col>
+                  <Col span={11}>
+                    <Form.Item name={['lightLux', 'max']} noStyle>
+                      <InputNumber
+                        placeholder="Max"
+                        onChange={(value) => handleFilterChange('lightLux', 'max', value)}
+                        style={{ width: '100%' }}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Form.Item label="Gas (ppm)">
+                <Row gutter={8}>
+                  <Col span={11}>
+                    <Form.Item name={['gas', 'min']} noStyle>
+                      <InputNumber
+                        placeholder="Min"
+                        onChange={(value) => handleFilterChange('gas', 'min', value)}
+                        style={{ width: '100%' }}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={2} style={{ textAlign: 'center' }}>-</Col>
+                  <Col span={11}>
+                    <Form.Item name={['gas', 'max']} noStyle>
+                      <InputNumber
+                        placeholder="Max"
+                        onChange={(value) => handleFilterChange('gas', 'max', value)}
+                        style={{ width: '100%' }}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row justify="end">
+            <Space>
+              <Button onClick={resetFilters}>Reset Filters</Button>
+              <Button 
+                type="primary" 
+                onClick={applyFilters} 
+                icon={<FilterOutlined />} 
+                loading={searchLoading}
+              >
+                Apply Filters
+              </Button>
+            </Space>
+          </Row>
+        </Form>
         <Table
           columns={columns}
           dataSource={filteredData}
@@ -234,9 +419,7 @@ const LivingRoomDetail = () => {
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total) => searchDate ? 
-              `Total ${total} records for ${searchDate.format('DD/MM/YYYY')}` :
-              `Total ${total} records`,
+            showTotal: (total) => `Total ${total} records found`,
             showQuickJumper: true
           }}
           size="middle"

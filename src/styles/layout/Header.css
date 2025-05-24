@@ -2,15 +2,177 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 0;
+  background: linear-gradient(90deg, #001529 0%, #003a70 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  height: 64px;
+  position: fixed;
+  width: 100%;
+  z-index: 1000;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  height: 100%;
+}
+
+.menu-toggle-button {
+  color: white;
+  font-size: 18px;
+  margin-right: 16px;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.menu-toggle-button:hover {
+  color: #1890ff;
+}
+
+.logo {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  font-size: 24px;
+  color: #1890ff;
+}
+
+.logo-text {
+  color: white !important;
+  margin: 0 !important;
+}
+
+.logo-link {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  color: white;
+  text-decoration: none;
+}
+
+.main-menu {
+  border-bottom: none !important;
+  background: transparent !important;
+}
+
+.main-menu .ant-menu-item {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 14px;
   padding: 0 20px;
-  background-color: #001529;
+}
+
+.main-menu .ant-menu-item-icon {
+  margin-right: 8px;
+}
+
+.main-menu .ant-menu-item-selected {
+  color: #fff;
+  background-color: #1890ff !important;
+  border-radius: 4px;
 }
 
 .auth-buttons {
   display: flex;
   align-items: center;
+  margin-right: 16px;
 }
 
-.auth-buttons .ant-btn {
+.auth-button {
   margin-left: 10px;
+  border-radius: 4px;
+}
+
+.auth-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.header-icon-button {
+  color: #fff;
+  font-size: 18px;
+  padding: 4px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.header-icon-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.user-profile-button {
+  display: flex;
+  align-items: center;
+  padding: 4px 12px;
+  color: white;
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.user-profile-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.user-avatar {
+  background-color: #1890ff;
+}
+
+.username {
+  margin-left: 8px;
+  font-weight: 500;
+}
+
+.notification-badge .ant-badge-count {
+  box-shadow: 0 0 0 2px #001529;
+}
+
+.notification-menu {
+  width: 320px;
+}
+
+.notification-item {
+  padding: 8px 0;
+  position: relative;
+}
+
+.notification-item.unread {
+  background-color: rgba(24, 144, 255, 0.05);
+}
+
+.notification-item .ant-badge {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.notification-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+@media (max-width: 768px) {
+  .username {
+    display: none;
+  }
+  
+  .logo-text {
+    display: none;
+  }
+  
+  .main-menu .ant-menu-item-icon {
+    margin-right: 0;
+  }
+  
+  .main-menu .ant-menu-title-content {
+    display: none;
+  }
 }

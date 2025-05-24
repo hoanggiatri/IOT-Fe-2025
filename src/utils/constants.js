@@ -20,24 +20,6 @@ export const ROOMS = {
     sensors: ['temperature', 'humidity', 'light', 'air-quality'],
     devices: ['light', 'fan', 'air-conditioner']
   },
-  BEDROOM_1: {
-    id: 'bedroom-1',
-    name: 'Bedroom 1',
-    sensors: ['temperature', 'humidity', 'light'],
-    devices: ['light', 'fan']
-  },
-  BEDROOM_2: {
-    id: 'bedroom-2',
-    name: 'Bedroom 2',
-    sensors: ['temperature', 'humidity', 'light'],
-    devices: ['light', 'fan']
-  },
-  KITCHEN: {
-    id: 'kitchen',
-    name: 'Kitchen',
-    sensors: ['temperature', 'humidity', 'gas', 'smoke'],
-    devices: ['light', 'fan', 'exhaust-fan']
-  }
 };
 
 export const LIGHT_STANDARDS = {
@@ -67,53 +49,11 @@ export const SENSOR_THRESHOLDS = {
   LIVING_ROOM: {
     temperature: { min: 18, max: 30 },
     humidity: { min: 30, max: 70 },
-    light: { min: 300, max: 1000 }, // Tiêu chuẩn ánh sáng phòng khách (lux)
-    gas: { min: 0, max: 100 } // ppm
+    light: { min: 300, max: 500 }, // Tiêu chuẩn ánh sáng phòng khách (lux)
+    gas: { min: 0, max: 5000 } // ppm
   },
-  BEDROOM_1: {
-    temperature: { min: 18, max: 24, warning: 26, critical: 28 },
-    humidity: { min: 30, max: 60, warning: 70, critical: 80 }
-  },
-  BEDROOM_2: {
-    temperature: { min: 18, max: 24, warning: 26, critical: 28 },
-    humidity: { min: 30, max: 60, warning: 70, critical: 80 }
-  },
-  KITCHEN: {
-    temperature: { min: 20, max: 27, warning: 30, critical: 32 },
-    humidity: { min: 30, max: 60, warning: 70, critical: 80 },
-    gas: { safe: 0, warning: 50, danger: 70, critical: 100 },
-    smoke: { safe: 0, warning: 50, danger: 70, critical: 100 }
-  }
 };
 
-export const DEVICE_SETTINGS = {
-  light: {
-    type: 'dimmer',
-    levels: [0, 25, 50, 75, 100],
-    defaultLevel: 50,
-    unit: '%'
-  },
-  fan: {
-    type: 'speed',
-    levels: [0, 1, 2, 3],
-    defaultLevel: 1,
-    unit: 'speed'
-  },
-  'air-conditioner': {
-    type: 'temperature',
-    range: { min: 16, max: 30 },
-    defaultTemp: 24,
-    modes: ['cool', 'heat', 'auto'],
-    defaultMode: 'auto',
-    unit: '°C'
-  },
-  'exhaust-fan': {
-    type: 'speed',
-    levels: [0, 1, 2],
-    defaultLevel: 1,
-    unit: 'speed'
-  }
-};
 
 export const SENSOR_ADVICE = {
   temperature: {
