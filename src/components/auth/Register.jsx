@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Navigate, Link, useNavigate } from 'react-router-dom';
 import { Form, Input, Button, Card } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, HomeOutlined } from '@ant-design/icons';
 import { doCreateUserWithEmailAndPassword } from '../../firebase/auth';
 import { useAuth } from '../../contexts/authContext';
 import '../../styles/components/Register.css';
@@ -27,63 +27,70 @@ const Register = () => {
   };
 
   return (
-    <div className="register-container">
+    <div className="auth-bg-gradient">
       {userLoggedIn && <Navigate to="/" replace />}
-      <Card className="register-card">
-        <h2 className="register-title">Create a New Account</h2>
-        <Form
-          name="register"
-          initialValues={{ remember: true }}
-          onFinish={onFinish}
-        >
-          <Form.Item
-            name="email"
-            rules={[{ required: true, message: 'Please input your Email!' }]}
+      <div className="auth-center-wrapper">
+        <Card className="auth-card animate-fade-in">
+          <div className="auth-logo">
+            <HomeOutlined />
+          </div>
+          <h2 className="auth-title">Create Account</h2>
+          <p className="auth-subtitle">Join the smart home experience</p>
+          <Form
+            name="register"
+            initialValues={{ remember: true }}
+            onFinish={onFinish}
+            layout="vertical"
+            size="large"
           >
-            <Input
-              prefix={<UserOutlined className="site-form-item-icon" />}
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </Form.Item>
-          <Form.Item
-            name="password"
-            rules={[{ required: true, message: 'Please input your Password!' }]}
-          >
-            <Input
-              prefix={<LockOutlined className="site-form-item-icon" />}
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </Form.Item>
-          <Form.Item
-            name="confirmPassword"
-            rules={[{ required: true, message: 'Please confirm your Password!' }]}
-          >
-            <Input
-              prefix={<LockOutlined className="site-form-item-icon" />}
-              type="password"
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-          </Form.Item>
-          {errorMessage && (
-            <div className="error-message">{errorMessage}</div>
-          )}
-          <Form.Item>
-            <Button type="primary" htmlType="submit" className="register-form-button" loading={isRegistering}>
-              Sign Up
-            </Button>
-          </Form.Item>
-          <Form.Item>
-            Already have an account? <Link to="/login">Login now!</Link>
-          </Form.Item>
-        </Form>
-      </Card>
+            <Form.Item
+              name="email"
+              rules={[{ required: true, message: 'Please input your Email!' }]}
+            >
+              <Input
+                prefix={<UserOutlined className="site-form-item-icon" />}
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoFocus
+              />
+            </Form.Item>
+            <Form.Item
+              name="password"
+              rules={[{ required: true, message: 'Please input your Password!' }]}
+            >
+              <Input.Password
+                prefix={<LockOutlined className="site-form-item-icon" />}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </Form.Item>
+            <Form.Item
+              name="confirmPassword"
+              rules={[{ required: true, message: 'Please confirm your Password!' }]}
+            >
+              <Input.Password
+                prefix={<LockOutlined className="site-form-item-icon" />}
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </Form.Item>
+            {errorMessage && (
+              <div className="error-message">{errorMessage}</div>
+            )}
+            <Form.Item>
+              <Button type="primary" htmlType="submit" className="auth-form-button" loading={isRegistering} block>
+                Sign Up
+              </Button>
+            </Form.Item>
+            <div className="auth-link">
+              Already have an account? <Link to="/login">Login now</Link>
+            </div>
+          </Form>
+        </Card>
+      </div>
     </div>
   );
 };

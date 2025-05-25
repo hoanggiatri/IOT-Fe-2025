@@ -28,29 +28,14 @@ export const LIGHT_STANDARDS = {
     max: 300,
     description: 'Living rooms need moderate lighting for comfort and activities like watching TV or reading'
   },
-  BEDROOM_1: {
-    min: 100,
-    max: 200,
-    description: 'Bedrooms require softer lighting for relaxation and rest'
-  },
-  BEDROOM_2: {
-    min: 100,
-    max: 200,
-    description: 'Bedrooms require softer lighting for relaxation and rest'
-  },
-  KITCHEN: {
-    min: 300,
-    max: 750,
-    description: 'Kitchens need bright lighting for food preparation and cooking safety'
-  }
 };
 
 export const SENSOR_THRESHOLDS = {
   LIVING_ROOM: {
     temperature: { min: 18, max: 30 },
     humidity: { min: 30, max: 70 },
-    light: { min: 300, max: 500 }, // Tiêu chuẩn ánh sáng phòng khách (lux)
-    gas: { min: 0, max: 5000 } // ppm
+    light: { min: 300, max: 500 },
+    gas: { min: 0, max: 5000 }
   },
 };
 

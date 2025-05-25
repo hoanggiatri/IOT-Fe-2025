@@ -1,3 +1,7 @@
+@import './Login.css';
+
+/* Nếu muốn custom riêng cho Register thì thêm dưới đây */
+
 .register-container {
   display: flex;
   justify-content: center;
